@@ -90,7 +90,15 @@ export default function EnhancedTaskTable() {
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant="secondary">
+              <Badge
+                variant={
+                  task.status === "Completed"
+                    ? "default"
+                    : task.status === "In Progress"
+                      ? "secondary"
+                      : "destructive"
+                }
+              >
                 {task.status}
               </Badge>
             </TableCell>

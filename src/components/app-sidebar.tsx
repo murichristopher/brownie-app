@@ -1,20 +1,7 @@
 "use client"
 
 import * as React from "react"
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  Moon,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  Sun,
-} from "lucide-react"
+import { AudioWaveform, BookOpen, Bot, Command, Frame, GalleryVerticalEnd, Map, Moon, PieChart, Settings2, SquareTerminal, Sun } from 'lucide-react'
 import { useTheme } from "next-themes"
 
 import { NavMain } from "@/components/nav-main"
@@ -167,20 +154,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
-      <SidebarFooter className="flex flex-col gap-2 p-2">
+      <SidebarFooter className="p-2">
         <NavUser user={data.user} />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={toggleTheme} className="ml-auto">
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Toggle theme</p>
-          </TooltipContent>
-        </Tooltip>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

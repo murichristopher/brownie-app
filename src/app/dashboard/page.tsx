@@ -1,4 +1,4 @@
-import EnhancedTaskTable from "@/components/ enhanced-task-table"
+import EnhancedTaskTable from "@/components/enhanced-task-table"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
