@@ -1,9 +1,22 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+
+export default function Page() {
+  const { toast } = useToast()
+
   return (
-    <>
-      <h1>Olá, mundo!</h1>
-    </>
-  );
+    <Button
+      onClick={() => {
+        toast({
+          title: "Scheduled: Catch up",
+          description: "Friday, February 10, 2023 at 5:57 PM",
+        })
+      }}
+    >
+      Show Toast
+    </Button>
+
+  )
 }
