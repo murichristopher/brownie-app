@@ -96,13 +96,15 @@ const createTask = async (newTask: Partial<Task>): Promise<Task> => {
 const updateTask = async (updatedTask: Partial<Task>): Promise<Task> => {
   try {
     const response = await axiosInstance.put(`${API_URL}/${updatedTask.id}`, updatedTask)
+
+    await axiosInstance.get('/users/me')
+
     return response.data
   } catch (error) {
     console.error('Error updating task:', error)
     throw new Error('Failed to update task. Please try again.')
   }
 }
-
 const deleteTask = async (id: number): Promise<void> => {
   try {
     await axiosInstance.delete(`${API_URL}/${id}`)
@@ -147,6 +149,7 @@ export default function EnhancedTaskTable() {
     mutationFn: updateTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['userData'] })
       toast({ title: "Task updated successfully" })
       setIsEditDialogOpen(false)
     },
@@ -208,7 +211,7 @@ export default function EnhancedTaskTable() {
     // audio.play().catch(error => console.error('Error playing sound:', error))
   }
 
-const handleCompleteTask = (taskId: number) => {
+  const handleCompleteTask = (taskId: number) => {
     updateMutation.mutate(
       { id: taskId, status: 'done' },
       {
