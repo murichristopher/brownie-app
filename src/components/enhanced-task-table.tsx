@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash, CheckCircle, Loader2, Coins } from 'lucide-react'
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import axiosInstance from '@/lib/axios'
 import { useAuth } from '@/lib/useAuth'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type Task = {
   id: number
@@ -44,11 +45,21 @@ type Task = {
   status: "todo" | "in_progress" | "done"
   coins: number
   user_id: number
+  user: User
   created_at: string
   updated_at: string
 }
 
+type User = {
+  id: number
+  name: string
+  email: string
+  coins: number
+  profile_picture: string | null
+}
+
 const API_URL = '/tasks'
+const USERS_API_URL = '/users'
 
 const fetchTasks = async (): Promise<Task[]> => {
   try {
@@ -57,6 +68,16 @@ const fetchTasks = async (): Promise<Task[]> => {
   } catch (error) {
     console.error('Error fetching tasks:', error)
     throw new Error('Failed to fetch tasks. Please try again later.')
+  }
+}
+
+const fetchUsers = async (): Promise<User[]> => {
+  try {
+    const response = await axiosInstance.get(USERS_API_URL)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    throw new Error('Failed to fetch users. Please try again later.')
   }
 }
 
@@ -93,6 +114,7 @@ export default function EnhancedTaskTable() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [completedTaskId, setCompletedTaskId] = useState<number | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -100,6 +122,11 @@ export default function EnhancedTaskTable() {
   const { data: tasks, isLoading, isError, error } = useQuery<Task[], Error>({
     queryKey: ['tasks'],
     queryFn: fetchTasks,
+  })
+
+  const { data: users } = useQuery<User[], Error>({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
   })
 
   const createMutation = useMutation({
@@ -144,7 +171,7 @@ export default function EnhancedTaskTable() {
       title: formData.get('title') as string,
       status: formData.get('status') as Task['status'],
       coins: Number(formData.get('coins')),
-      user_id: user?.id || 0,
+      user_id: Number(formData.get('user_id')),
     }
     createMutation.mutate(newTask)
   }
@@ -158,9 +185,39 @@ export default function EnhancedTaskTable() {
       title: formData.get('title') as string,
       status: formData.get('status') as Task['status'],
       coins: Number(formData.get('coins')),
-      user_id: editingTask.user_id,
+      user_id: Number(formData.get('user_id')),
     }
     updateMutation.mutate(updatedTask)
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return isNaN(date.getTime())
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()
+      : date.toLocaleDateString()
+  }
+
+  const playCompletionSound = () => {
+    // const audio = new Audio('/completion-sound.mp3')
+    // audio.play().catch(error => console.error('Error playing sound:', error))
+  }
+
+  const handleCompleteTask = (taskId: number) => {
+    updateMutation.mutate(
+      { id: taskId, status: 'done' },
+      {
+        onSuccess: () => {
+          setCompletedTaskId(taskId)
+          playCompletionSound()
+          toast({
+            title: "Task Completed!",
+            description: "Great job! Keep up the good work! 👏",
+            duration: 3000,
+          })
+          setTimeout(() => setCompletedTaskId(null), 1000)
+        }
+      }
+    )
   }
 
   const completedTasks = tasks?.filter(task => task.status === 'done').length || 0
@@ -206,6 +263,27 @@ export default function EnhancedTaskTable() {
                   <Label htmlFor="coins" className="text-right">Coins</Label>
                   <Input id="coins" name="coins" type="number" className="col-span-3" required />
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="user_id" className="text-right">Assign To</Label>
+                  <Select name="user_id" defaultValue={user?.id.toString()}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users?.map((user) => (
+                        <SelectItem key={user.id} value={user.id.toString()}>
+                          <div className="flex items-center">
+                            <Avatar className="h-6 w-6 mr-2">
+                              <AvatarImage src={user.profile_picture || ''} alt={user.name} />
+                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            {user.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit">Create Task</Button>
@@ -227,79 +305,94 @@ export default function EnhancedTaskTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-6 w-[250px]" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-[70px]" /></TableCell>
-                </TableRow>
-              ))
-            ) : (
-              tasks?.map((task) => (
-                <TableRow key={task.id} className={task.status === 'done' ? 'opacity-60' : ''}>
-                  <TableCell className="font-medium">{task.title}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        task.status === "done"
-                          ? "default"
-                          : task.status === "in_progress"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {task.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Coins className="h-4 w-4" />
-                      <span>{task.coins} AXO</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.profile_picture || ''} alt={`User ${task.user_id}`} />
-                      <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="text-right">{new Date(task.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => {
-                          setEditingTask(task)
-                          setIsEditDialogOpen(true)
-                        }}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateMutation.mutate({ id: task.id, status: 'done' })}>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          <span>Mark as Complete</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => deleteMutation.mutate(task.id)}>
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            <AnimatePresence>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-6 w-[250px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[70px]" /></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                tasks?.map((task) => (
+                  <motion.tr
+                    key={task.id}
+                    className={`${task.status === 'done' ? 'opacity-70' : ''} transition-all duration-300`}
+                    initial={{ opacity: 0 }}
+                    animate={{
+                      opacity: 1,
+                      scale: completedTaskId === task.id ? [1, 1.05, 1] : 1,
+                      backgroundColor: completedTaskId === task.id ? ['#ffffff', '#f0fff4', '#ffffff'] : '#ffffff'
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <TableCell className="font-medium">{task.title}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          task.status === "done"
+                            ? "default"
+                            : task.status === "in_progress"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {task.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Coins className="h-4 w-4" />
+                        <span>{task.coins} AXO</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {users && (
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={users.find(u => u.id === task.user.id)?.profile_picture || ''} alt={`User ${task.user_id}`} />
+                          <AvatarFallback>{users.find(u => u.id === task.user_id)?.name.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">{formatDate(task.created_at)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => {
+                            setEditingTask(task)
+                            setIsEditDialogOpen(true)
+                          }}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCompleteTask(task.id)}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <span>Mark as Complete</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => deleteMutation.mutate(task.id)}>
+                            <Trash className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
+            </AnimatePresence>
           </TableBody>
         </Table>
       </div>
@@ -334,6 +427,27 @@ export default function EnhancedTaskTable() {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-coins" className="text-right">Coins</Label>
                 <Input id="edit-coins" name="coins" type="number" defaultValue={editingTask?.coins} className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-user_id" className="text-right">Assign To</Label>
+                <Select name="user_id">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users?.map((user) => (
+                      <SelectItem key={user.id} value={user.id.toString()}>
+                        <div className="flex items-center">
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage src={user.profile_picture || ''} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          {user.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

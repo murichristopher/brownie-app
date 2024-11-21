@@ -1,22 +1,30 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from 'lucide-react'
-import axiosInstance from '@/lib/axios'
+import { useAuth } from '@/lib/useAuth'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.push('/')
+    }
+  }, [user, router])
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-    window.location.href = 'http://localhost:4000/users/auth/google_oauth2';
-
+      window.location.href = 'http://localhost:4000/users/auth/google_oauth2'
     } catch (error) {
       console.error('Login error:', error)
       toast({
@@ -27,6 +35,10 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (user) {
+    return null // or a loading spinner if you prefer
   }
 
   return (

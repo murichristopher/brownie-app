@@ -17,14 +17,10 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAuth } from '@/lib/useAuth'
 
 // This is sample data.
 const data = {
-  user: {
-    name: "murichristopher",
-    email: "murichristopher@outlook.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Axolutions",
@@ -140,6 +136,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
@@ -155,7 +152,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter className="p-2">
-        <NavUser user={data.user} />
+        <NavUser user={{
+          name: user?.name || 'User',
+          email: user?.email || 'user@example.com',
+          avatar: user?.profile_picture || '/placeholder.svg'
+        }} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
