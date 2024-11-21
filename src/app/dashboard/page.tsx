@@ -80,36 +80,9 @@ const queryClient = new QueryClient()
 
 export function Page() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="sticky top-0 z-10 border-b bg-background">
-            <div className="flex h-16 items-center justify-between px-4">
-              <div className="flex items-center space-x-4">
-                <SidebarTrigger />
-                <Separator orientation="vertical" className="h-6" />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink href="#">Tasks</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Management</BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
-              <UserHeader />
-            </div>
-          </header>
-          <main className="flex-1 overflow-y-auto p-4">
-            <EnhancedTaskTable />
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </QueryClientProvider>
+
+    <EnhancedTaskTable />
+
   )
 }
 
