@@ -208,7 +208,7 @@ export default function EnhancedTaskTable() {
     // audio.play().catch(error => console.error('Error playing sound:', error))
   }
 
-  const handleCompleteTask = (taskId: number) => {
+const handleCompleteTask = (taskId: number) => {
     updateMutation.mutate(
       { id: taskId, status: 'done' },
       {
@@ -221,11 +221,12 @@ export default function EnhancedTaskTable() {
             duration: 3000,
           })
           setTimeout(() => setCompletedTaskId(null), 1000)
+          // Invalidate the userData query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['userData'] })
         }
       }
     )
   }
-
   const completedTasks = tasks?.filter(task => task.status === 'done').length || 0
   const totalTasks = tasks?.length || 0
 
