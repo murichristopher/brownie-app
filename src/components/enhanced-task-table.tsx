@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash, CheckCircle, Loader2, Coins } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash, CheckCircle, Coins } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
@@ -46,6 +46,8 @@ type Task = {
   coins: number
   user_id: number
   user: User
+  priority: "high" | "medium" | "low"
+  due_date: string
   created_at: string
   updated_at: string
 }
@@ -172,6 +174,8 @@ export default function EnhancedTaskTable() {
       status: formData.get('status') as Task['status'],
       coins: Number(formData.get('coins')),
       user_id: Number(formData.get('user_id')),
+      priority: formData.get('priority') as Task['priority'],
+      due_date: formData.get('due_date') as string,
     }
     createMutation.mutate(newTask)
   }
@@ -186,6 +190,8 @@ export default function EnhancedTaskTable() {
       status: formData.get('status') as Task['status'],
       coins: Number(formData.get('coins')),
       user_id: Number(formData.get('user_id')),
+      priority: formData.get('priority') as Task['priority'],
+      due_date: formData.get('due_date') as string,
     }
     updateMutation.mutate(updatedTask)
   }
@@ -193,7 +199,7 @@ export default function EnhancedTaskTable() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return isNaN(date.getTime())
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()
+      ? 'Invalid Date'
       : date.toLocaleDateString()
   }
 
@@ -284,6 +290,23 @@ export default function EnhancedTaskTable() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="priority" className="text-right">Priority</Label>
+                  <Select name="priority" defaultValue="medium">
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="due_date" className="text-right">Due Date</Label>
+                  <Input id="due_date" name="due_date" type="date" className="col-span-3" required />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit">Create Task</Button>
@@ -296,10 +319,12 @@ export default function EnhancedTaskTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Task</TableHead>
+              <TableHead className="w-[200px]">Task</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Coins</TableHead>
               <TableHead>User</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Due Date</TableHead>
               <TableHead className="text-right">Created At</TableHead>
               <TableHead className="w-[70px]">Actions</TableHead>
             </TableRow>
@@ -309,10 +334,12 @@ export default function EnhancedTaskTable() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <TableRow key={index}>
-                    <TableCell><Skeleton className="h-6 w-[250px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[180px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-[70px]" /></TableCell>
                   </TableRow>
@@ -359,6 +386,20 @@ export default function EnhancedTaskTable() {
                         </Avatar>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          task.priority === "high"
+                            ? "destructive"
+                            : task.priority === "medium"
+                              ? "default"
+                              : "secondary"
+                        }
+                      >
+                        {task.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(task.due_date)}</TableCell>
                     <TableCell className="text-right">{formatDate(task.created_at)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -448,6 +489,23 @@ export default function EnhancedTaskTable() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-priority" className="text-right">Priority</Label>
+                <Select name="priority" defaultValue={editingTask?.priority}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-due_date" className="text-right">Due Date</Label>
+                <Input id="edit-due_date" name="due_date" type="date" defaultValue={editingTask?.due_date} className="col-span-3" required />
               </div>
             </div>
             <DialogFooter>
