@@ -1,3 +1,7 @@
+"use client"
+
+import { useQuery } from '@tanstack/react-query'
+import { CoinsIcon, Bell, Settings, LogOut, ChevronDown } from 'lucide-react'
 import EnhancedTaskTable from "@/components/enhanced-task-table"
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -14,37 +18,95 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import axiosInstance from '@/lib/axios'
+
+type User = {
+  id: number
+  email: string
+  profile_picture: string
+  coins: number
+}
+
+const fetchUserData = async (): Promise<User> => {
+  const response = await axiosInstance.get('/users/me')
+  return response.data
+}
+
+function UserHeader() {
+  const { data: user, isLoading, isError } = useQuery<User>({
+    queryKey: ['userData'],
+    queryFn: fetchUserData,
+  })
+
+  if (isLoading) return <div>Loading...</div>
+  if (isError) return <div>Error loading user data</div>
+
+  return (
+    <Card className="bg-background mb-1.5">
+      <CardContent className="flex items-center justify-between p-4">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user.profile_picture} alt={user.email} />
+            <AvatarFallback>{user.email[0].toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">{user.email}</p>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <CoinsIcon className="mr-1 h-4 w-4" />
+              <Badge variant="secondary" className="rounded-full px-2 py-0.5">
+                {user.coins} coins
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export function Page() {
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+        <header className="sticky top-0 z-10 border-b bg-background">
+          <div className="flex h-16 items-center justify-between px-4">
+            <div className="flex items-center space-x-4">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="h-6" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="#">Tasks</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Management</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+            <UserHeader />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <main className="flex-1 overflow-y-auto p-4">
           <EnhancedTaskTable />
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
 }
 
-export default Page;
+export default Page
