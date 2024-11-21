@@ -17,21 +17,30 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Link, Star, Edit, Trash } from 'lucide-react'
+import { Link, Star, Edit, Trash, Plus } from 'lucide-react'
 import axiosInstance from '@/lib/axios'
+
+type Task = {
+  id: number
+  title: string
+  status: "todo" | "in_progress" | "done"
+  coins: number
+  user_id: number
+}
 
 type Project = {
   id: number
   name: string
   description: string
-  tasks: Array<{
-    id: number
-    title: string
-    status: string
-    coins: number
-    user_id: number
-  }>
+  tasks: Task[]
 }
 
 const API_URL = '/projects'
@@ -55,10 +64,17 @@ const deleteProject = async (id: number): Promise<void> => {
   await axiosInstance.delete(`${API_URL}/${id}`)
 }
 
+const createTask = async (projectId: number, newTask: Partial<Task>): Promise<Task> => {
+  const response = await axiosInstance.post(`${API_URL}/${projectId}/tasks`, newTask)
+  return response.data
+}
+
 export default function ProjectsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -102,6 +118,19 @@ export default function ProjectsPage() {
     }
   })
 
+  const createTaskMutation = useMutation({
+    mutationFn: ({ projectId, newTask }: { projectId: number; newTask: Partial<Task> }) =>
+      createTask(projectId, newTask),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      toast({ title: "Task created successfully" })
+      setIsCreateTaskDialogOpen(false)
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to create task", description: error.message, variant: "destructive" })
+    }
+  })
+
   const handleCreateProject = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
@@ -122,6 +151,19 @@ export default function ProjectsPage() {
       description: formData.get('description') as string,
     }
     updateMutation.mutate(updatedProject)
+  }
+
+  const handleCreateTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedProjectId) return
+    const formData = new FormData(event.currentTarget)
+    const newTask = {
+      title: formData.get('title') as string,
+      status: formData.get('status') as Task['status'],
+      coins: Number(formData.get('coins')),
+      user_id: 1, // Assuming a default user_id, you might want to implement user selection
+    }
+    createTaskMutation.mutate({ projectId: selectedProjectId, newTask })
   }
 
   if (isLoading) return <div>Loading projects...</div>
@@ -159,7 +201,7 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects?.map(project => (
+        {projects.map(project => (
           <Card key={project.id} className="relative">
             <CardContent className="p-4">
               <div className="absolute top-2 right-2 flex space-x-2">
@@ -184,8 +226,20 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <div className="mt-4">
-                <h3 className="text-sm font-medium mb-2">Tasks</h3>
-                {project?.tasks?.length > 0 ? (
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium">Tasks</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProjectId(project.id)
+                      setIsCreateTaskDialogOpen(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Add Task
+                  </Button>
+                </div>
+                {project.tasks.length > 0 ? (
                   <ul className="space-y-1">
                     {project.tasks.map(task => (
                       <li key={task.id} className="text-sm">
@@ -220,6 +274,42 @@ export default function ProjectsPage() {
             </div>
             <DialogFooter>
               <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isCreateTaskDialogOpen} onOpenChange={setIsCreateTaskDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>Add a new task to the project.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateTask}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">Title</Label>
+                <Input id="title" name="title" className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="status" className="text-right">Status</Label>
+                <Select name="status" defaultValue="todo">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">Todo</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="coins" className="text-right">Coins</Label>
+                <Input id="coins" name="coins" type="number" className="col-span-3" required />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Create Task</Button>
             </DialogFooter>
           </form>
         </DialogContent>
