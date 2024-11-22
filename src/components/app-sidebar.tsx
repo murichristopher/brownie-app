@@ -28,7 +28,7 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/projects",
       icon: FolderKanban,
       items: [
         {
