@@ -27,6 +27,17 @@ const data = {
   ],
   navMain: [
     {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: FolderKanban,
+      items: [
+        {
+          title: "Open dashboard",
+          url: "/dashboard",
+        },
+      ],
+    },
+    {
       title: "Projects",
       url: "/projects",
       icon: FolderKanban,

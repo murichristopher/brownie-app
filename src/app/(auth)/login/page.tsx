@@ -1,48 +1,20 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from 'lucide-react'
-import { useAuth } from '@/lib/useAuth'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { user } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (user) {
-      router.push('/')
-    }
-  }, [user, router])
-
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setIsLoading(true)
-    try {
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/users/auth/google_oauth2`
-    } catch (error) {
-      console.error('Login error:', error)
-      toast({
-        title: "Login Failed",
-        description: "There was a problem connecting to the login service. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    )
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/users/auth/google_oauth2`
   }
 
   return (
@@ -55,13 +27,9 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Image
-            src="/placeholder.svg?height=100&width=100"
-            alt="App Logo"
-            width={100}
-            height={100}
-            className="rounded-full"
-          />
+          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+            <Loader2 className="h-12 w-12 text-gray-400" />
+          </div>
         </CardContent>
         <CardFooter>
           <Button

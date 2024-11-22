@@ -1,5 +1,6 @@
 "use client"
 
+import { useTheme } from "next-themes"
 import {
   BadgeCheck,
   Bell,
@@ -10,8 +11,6 @@ import {
   Sparkles,
   Sun,
 } from "lucide-react"
-import { useTheme } from "next-themes"
-
 import {
   Avatar,
   AvatarFallback,
@@ -34,6 +33,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAuth } from "@/lib/useAuth"
 
 export function NavUser({
   user,
@@ -46,9 +46,14 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
+  const { logout } = useAuth()
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
+  }
+
+  const handleLogout = () => {
+    logout()
   }
 
   return (
@@ -113,7 +118,7 @@ export function NavUser({
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
