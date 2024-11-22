@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import axios from 'axios'
 import { useToast } from "@/components/ui/use-toast"
+import { Loader2 } from 'lucide-react'
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -26,7 +27,7 @@ export default function AuthCallback() {
       }
 
       try {
-        const response = await axios.get(`http://localhost:4000/users/auth/google_oauth2/callback`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/auth/google_oauth2/callback`, {
           params: { code, state }
         })
 
@@ -61,11 +62,26 @@ export default function AuthCallback() {
   }, [router, searchParams, toast])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="text-center">
         <h1 className="text-2xl font-bold mb-4">Authenticating...</h1>
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
       </div>
     </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+        </div>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   )
 }

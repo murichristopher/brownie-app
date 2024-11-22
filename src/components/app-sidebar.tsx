@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FolderKanban, ListTodo, Moon, Settings2, Sun } from 'lucide-react'
+import { FolderKanban, ListTodo } from 'lucide-react'
 import { useTheme } from "next-themes"
 
 import { NavMain } from "@/components/nav-main"
@@ -14,8 +14,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent } from "@/components/ui/tooltip"
 import { useAuth } from '@/lib/useAuth'
 
 const data = {

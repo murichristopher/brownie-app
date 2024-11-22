@@ -2,9 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -91,7 +89,7 @@ export default function CoinPage() {
               <Skeleton className="h-8 w-[100px]" />
             ) : (
               <div className="text-2xl font-bold">
-                R$ {(user?.coins * currentAXOValueReais).toFixed(2)}
+                R$ {((user?.coins ?? 0) * currentAXOValueReais).toFixed(2)}
               </div>
             )}
           </CardContent>
@@ -107,7 +105,7 @@ export default function CoinPage() {
               <Skeleton className="h-8 w-[100px]" />
             ) : (
               <div className="text-2xl font-bold">
-                $ {(user?.coins * currentAXOValueDollars).toFixed(2)}
+                $ {((user?.coins ?? 0) * currentAXOValueDollars).toFixed(2)}
               </div>
             )}
           </CardContent>

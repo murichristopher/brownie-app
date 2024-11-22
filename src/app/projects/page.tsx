@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Link, Star, Edit, Trash, Plus } from 'lucide-react'
+import { Edit, Trash, Plus } from 'lucide-react'
 import axiosInstance from '@/lib/axios'
 import { useRouter } from 'next/navigation'
 
@@ -207,7 +207,7 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {projects.map(project => (
+        {projects?.map(project => (
           <Card key={project.id} className="relative cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleProjectClick(project.id)}>
             <CardContent className="p-4">
               <div className="absolute top-2 right-2 flex space-x-2">

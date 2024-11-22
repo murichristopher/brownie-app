@@ -24,7 +24,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-      window.location.href = 'http://localhost:4000/users/auth/google_oauth2'
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/users/auth/google_oauth2`
     } catch (error) {
       console.error('Login error:', error)
       toast({
@@ -38,11 +38,15 @@ export default function LoginPage() {
   }
 
   if (user) {
-    return null // or a loading spinner if you prefer
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-[350px]">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Welcome back</CardTitle>

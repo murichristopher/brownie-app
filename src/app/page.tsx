@@ -3,10 +3,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import axiosInstance from '@/lib/axios'
 
@@ -110,17 +109,15 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-[100px]" />
                   ) : (
                     <div className="text-2xl font-bold">
-                      {index === 3 ?
-                        `${overview?.completion_rate.toFixed(1)}%` :
-                        overview?.[['total_projects', 'total_users', 'total_tasks'][index] as keyof DashboardOverview]
+                      {index === 3
+                        ? `${overview?.completion_rate?.toFixed(1) ?? 0}%`
+                        : (() => {
+                          const key = ['total_projects', 'total_users', 'total_tasks'][index] as keyof DashboardOverview;
+                          const value = overview?.[key];
+                          return typeof value === 'number' ? value : 'N/A';
+                        })()
                       }
                     </div>
-                  )}
-                  {index === 3 && (
-                    <Progress
-                      value={overview?.completion_rate}
-                      className="mt-2"
-                    />
                   )}
                 </CardContent>
               </Card>

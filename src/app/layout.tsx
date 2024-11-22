@@ -1,23 +1,15 @@
 "use client";
 
-import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
 
 
 import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CoinsIcon, Bell, Settings, LogOut, ChevronDown } from 'lucide-react'
-import EnhancedTaskTable from "@/components/enhanced-task-table"
+import { CoinsIcon } from 'lucide-react'
 import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+
+
 import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
@@ -25,15 +17,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
+import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import axiosInstance from '@/lib/axios'
@@ -70,23 +55,46 @@ function UserHeader() {
     queryFn: fetchUserData,
   })
 
-  if (isLoading) return <div>Loading...</div>
-  if (isError) return <div>Error loading user data</div>
+  if (isLoading) {
+    return (
+      <Card className="bg-background mb-1.5">
+        <CardContent className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div>
+              <Skeleton className="h-4 w-[150px]" />
+              <Skeleton className="h-4 w-[100px] mt-2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isError) {
+    return (
+      <Card className="bg-background mb-1.5">
+        <CardContent className="flex items-center justify-between p-4">
+          <div className="text-sm text-red-500">Error loading user data</div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="bg-background mb-1.5">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center space-x-4">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.profile_picture} alt={user.email} />
-            <AvatarFallback>{user.email[0].toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user?.profile_picture} alt={user?.email || 'User'} />
+            <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-medium">{user.email}</p>
+            <p className="text-sm font-medium">{user?.email || 'Unknown User'}</p>
             <div className="flex items-center text-sm text-muted-foreground">
               <CoinsIcon className="mr-1 h-4 w-4" />
               <Badge variant="secondary" className="rounded-full px-2 py-0.5">
-                {user.coins} coins
+                {user?.coins || 0} coins
               </Badge>
             </div>
           </div>

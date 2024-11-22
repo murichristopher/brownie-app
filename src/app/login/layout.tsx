@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import axios from 'axios'
 import { useToast } from "@/components/ui/use-toast"
+import { Loader2 } from 'lucide-react'
 
-export default function LoginLayout({ children }: { children: React.ReactNode }) {
+function LoginLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -38,4 +39,16 @@ export default function LoginLayout({ children }: { children: React.ReactNode })
   }, [searchParams, router, toast])
 
   return <>{children}</>
+}
+
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginLayoutContent>{children}</LoginLayoutContent>
+    </Suspense>
+  )
 }
