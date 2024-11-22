@@ -101,7 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={{
           name: user?.name || 'User',
           email: user?.email || 'user@example.com',
-          avatar: user?.profile_picture || '/placeholder.svg'
+          avatar: user?.profile_picture || "",
         }} />
         <Tooltip>
           <TooltipContent>

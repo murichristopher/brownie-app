@@ -138,7 +138,9 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{overview?.completion_rate.toFixed(1)}%</div>
+                <div className="text-2xl font-bold">
+                  {overview?.completion_rate ? `${overview.completion_rate.toFixed(1)}%` : 'N/A'}
+                </div>
                 <Progress
                   value={overview?.completion_rate}
                   className="mt-2"

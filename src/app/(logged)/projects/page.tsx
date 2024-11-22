@@ -227,7 +227,7 @@ export default function ProjectsPage() {
               </div>
               <div className="flex items-center space-x-4">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src="/placeholder.svg?height=40&width=40" alt={project.name} />
+                  {/* <AvatarImage src="/placeholder.svg?height=40&width=40" alt={project.name} /> */}
                   <AvatarFallback>{project.name[0]}</AvatarFallback>
                 </Avatar>
                 <div>

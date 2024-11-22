@@ -492,7 +492,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-user_id" className="text-right">Assign To</Label>
-                <Select name="user_id" defaultValue={editingTask?.user_id.toString()}>
+                <Select name="user_id">
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select user" />
                   </SelectTrigger>
