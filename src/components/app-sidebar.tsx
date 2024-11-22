@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { AudioWaveform, BookOpen, Bot, Command, Frame, GalleryVerticalEnd, Map, Moon, PieChart, Settings2, SquareTerminal, Sun } from 'lucide-react'
+import { FolderKanban, ListTodo, Moon, Settings2, Sun } from 'lucide-react'
 import { useTheme } from "next-themes"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
@@ -19,118 +18,56 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuth } from '@/lib/useAuth'
 
-// This is sample data.
 const data = {
   teams: [
     {
       name: "Axolutions",
-      logo: GalleryVerticalEnd,
+      logo: FolderKanban,
       plan: "Empresa",
     },
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
+      title: "Projects",
+      url: "/projects",
+      icon: FolderKanban,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "All Projects",
+          url: "/projects",
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
+          title: "Create New Project",
+          url: "/projects",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
+      title: "Tasks",
+      url: "/tasks",
+      icon: ListTodo,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "My Tasks",
+          url: "/my-tasks",
         },
         {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
+          title: "Create New Task",
+          url: "/my-tasks",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
+      title: "AxoCoin",
+      url: "/coin",
+      icon: ListTodo,
       items: [
         {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Coin",
+          url: "/coin",
         },
       ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
+    }
   ],
 }
 
@@ -149,14 +86,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 space-y-2">
         <NavUser user={{
           name: user?.name || 'User',
           email: user?.email || 'user@example.com',
           avatar: user?.profile_picture || '/placeholder.svg'
         }} />
+        <Tooltip>
+          <TooltipContent>
+            <p>Toggle theme</p>
+          </TooltipContent>
+        </Tooltip>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import axiosInstance from '@/lib/axios'
 
 import { Toaster } from "@/components/ui/toaster"
+import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -124,17 +125,7 @@ export default function RootLayout({
                     <div className="flex items-center space-x-4">
                       <SidebarTrigger />
                       <Separator orientation="vertical" className="h-6" />
-                      <Breadcrumb>
-                        <BreadcrumbList>
-                          <BreadcrumbItem>
-                            <BreadcrumbLink href="#">Tasks</BreadcrumbLink>
-                          </BreadcrumbItem>
-                          <BreadcrumbSeparator />
-                          <BreadcrumbItem>
-                            <BreadcrumbPage>Management</BreadcrumbPage>
-                          </BreadcrumbItem>
-                        </BreadcrumbList>
-                      </Breadcrumb>
+                      <DynamicBreadcrumb />
                     </div>
                     <UserHeader />
                   </div>

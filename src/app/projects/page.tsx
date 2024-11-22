@@ -27,6 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Link, Star, Edit, Trash, Plus } from 'lucide-react'
 import axiosInstance from '@/lib/axios'
+import { useRouter } from 'next/navigation'
 
 type Task = {
   id: number
@@ -77,6 +78,7 @@ export default function ProjectsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const { data: projects, isLoading, isError } = useQuery<Project[]>({
     queryKey: ['projects'],
@@ -166,6 +168,10 @@ export default function ProjectsPage() {
     createTaskMutation.mutate({ projectId: selectedProjectId, newTask })
   }
 
+  const handleProjectClick = (projectId: number) => {
+    router.push(`/projects/${projectId}`)
+  }
+
   if (isLoading) return <div>Loading projects...</div>
   if (isError) return <div>Error loading projects</div>
 
@@ -202,16 +208,20 @@ export default function ProjectsPage() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {projects.map(project => (
-          <Card key={project.id} className="relative">
+          <Card key={project.id} className="relative cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleProjectClick(project.id)}>
             <CardContent className="p-4">
               <div className="absolute top-2 right-2 flex space-x-2">
-                <Button variant="ghost" size="icon" onClick={() => {
+                <Button variant="ghost" size="icon" onClick={(e) => {
+                  e.stopPropagation()
                   setEditingProject(project)
                   setIsEditDialogOpen(true)
                 }}>
                   <Edit className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(project.id)}>
+                <Button variant="ghost" size="icon" onClick={(e) => {
+                  e.stopPropagation()
+                  deleteMutation.mutate(project.id)
+                }}>
                   <Trash className="h-5 w-5" />
                 </Button>
               </div>
@@ -231,7 +241,8 @@ export default function ProjectsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setSelectedProjectId(project.id)
                       setIsCreateTaskDialogOpen(true)
                     }}
