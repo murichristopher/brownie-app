@@ -35,16 +35,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import axiosInstance from '@/lib/axios'
 import { useAuth } from '@/lib/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
+import { KanbanBoard } from './kanban-board'
 
 type Task = {
   id: number
   title: string
   status: "todo" | "in_progress" | "done"
   coins: number
-  user_id: number
   user: User
   priority: "high" | "medium" | "low"
   due_date: string
@@ -336,128 +337,149 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Task</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Coins</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead className="text-right">Created At</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <AnimatePresence>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton className="h-6 w-[180px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-[70px]" /></TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                tasks?.map((task) => (
-                  <motion.tr
-                    key={task.id}
-                    className={`${task.status === 'done' ? 'opacity-70' : ''} transition-all duration-300`}
-                    initial={{ opacity: 0 }}
-                    animate={{
-                      opacity: 1,
-                      scale: completedTaskId === task.id ? [1, 1.05, 1] : 1,
-                      backgroundColor: completedTaskId === task.id ? ['#ffffff', '#f0fff4', '#ffffff'] : '#ffffff'
-                    }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <TableCell className="font-medium">{task.title}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          task.status === "done"
-                            ? "default"
-                            : task.status === "in_progress"
-                              ? "secondary"
-                              : "destructive"
-                        }
+      <Tabs defaultValue="table" className="w-full">
+        <TabsList>
+          <TabsTrigger value="table">Table View</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+        </TabsList>
+        <TabsContent value="table">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Task</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Coins</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead className="text-right">Created At</TableHead>
+                  <TableHead className="w-[70px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <AnimatePresence>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell><Skeleton className="h-6 w-[180px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[50px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[80px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[100px]" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-[70px]" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    tasks?.map((task) => (
+                      <motion.tr
+                        key={task.id}
+                        className={`${task.status === 'done' ? 'opacity-70' : ''} transition-all duration-300`}
+                        initial={{ opacity: 0 }}
+                        animate={{
+                          opacity: 1,
+                          scale: completedTaskId === task.id ? [1, 1.05, 1] : 1,
+                          backgroundColor: completedTaskId === task.id ? ['#ffffff', '#f0fff4', '#ffffff'] : '#ffffff'
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        {task.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4" />
-                        <span>{task.coins} AXO</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {users && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={users.find(u => u.id === task.user.id)?.profile_picture || ''} alt={`User ${task.user_id}`} />
-                          <AvatarFallback>{users.find(u => u.id === task.user_id)?.name.charAt(0) || 'U'}</AvatarFallback>
-                        </Avatar>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          task.priority === "high"
-                            ? "destructive"
-                            : task.priority === "medium"
-                              ? "default"
-                              : "secondary"
-                        }
-                      >
-                        {task.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(task.due_date)}</TableCell>
-                    <TableCell className="text-right">{formatDate(task.created_at)}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => {
-                            setEditingTask(task)
-                            setIsEditDialogOpen(true)
-                          }}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Edit</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCompleteTask(task.id)}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            <span>Mark as Complete</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => deleteMutation.mutate(task.id)}>
-                            <Trash className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </motion.tr>
-                ))
-              )}
-            </AnimatePresence>
-          </TableBody>
-        </Table>
-      </div>
+                        <TableCell className="font-medium">{task.title}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              task.status === "done"
+                                ? "default"
+                                : task.status === "in_progress"
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                          >
+                            {task.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Coins className="h-4 w-4" />
+                            <span>{task.coins} AXO</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {users && (
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={users.find(u => u.id === task.user.id)?.profile_picture || ''} alt={`User ${task.user.id}`} />
+
+                            </Avatar>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              task.priority === "high"
+                                ? "destructive"
+                                : task.priority === "medium"
+                                  ? "default"
+                                  : "secondary"
+                            }
+                          >
+                            {task.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(task.due_date)}</TableCell>
+                        <TableCell className="text-right">{formatDate(task.created_at)}</TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => {
+                                setEditingTask(task)
+                                setIsEditDialogOpen(true)
+                              }}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Edit</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCompleteTask(task.id)}>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <span>Mark as Complete</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => deleteMutation.mutate(task.id)}>
+                                <Trash className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </AnimatePresence>
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+        <TabsContent value="kanban">
+          {isLoading ? (
+            <div className="flex gap-4">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="flex-1 min-w-[300px]">
+                  <Skeleton className="h-[500px] w-full" />
+                </div>
+              ))}
+            </div>
+          ) : tasks ? (
+            <KanbanBoard tasks={tasks} projectId={projectId} />
+          ) : null}
+        </TabsContent>
+      </Tabs>
       <div className="mt-4 text-sm text-gray-500">
         Total Tasks: {totalTasks} | Completed Tasks: {completedTasks}
       </div>
@@ -492,7 +514,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-user_id" className="text-right">Assign To</Label>
-                <Select name="user_id">
+                <Select name="user_id" defaultValue={editingTask?.user.id.toString()}>
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select user" />
                   </SelectTrigger>
