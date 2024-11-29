@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 
 
 import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CoinsIcon } from 'lucide-react'
 import { AppSidebar } from "@/components/app-sidebar"
 
 
@@ -15,15 +14,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import axiosInstance from '@/lib/axios'
 
 import { Toaster } from "@/components/ui/toaster"
 import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb";
+import CoinBalance from "@/components/coin-balance";
 
 
 type User = {
@@ -71,25 +69,7 @@ function UserHeader() {
   }
 
   return (
-    <Card className="bg-background mb-1.5">
-      <CardContent className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.profile_picture} alt={user?.email || 'User'} />
-            <AvatarFallback>{user?.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-sm font-medium">{user?.email || 'Unknown User'}</p>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <CoinsIcon className="mr-1 h-4 w-4" />
-              <Badge variant="secondary" className="rounded-full px-2 py-0.5">
-                {user?.coins || 0} coins
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <CoinBalance user={user} />
   )
 }
 

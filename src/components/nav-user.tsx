@@ -2,13 +2,9 @@
 
 import { useTheme } from "next-themes"
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
   Moon,
-  Sparkles,
   Sun,
 } from "lucide-react"
 import {
@@ -20,7 +16,6 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -96,7 +91,7 @@ export function NavUser({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuGroup>
+              {/* <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles className="mr-2 h-4 w-4" />
                   <span>Upgrade to Pro</span>
@@ -116,7 +111,7 @@ export function NavUser({
                   <Bell className="mr-2 h-4 w-4" />
                   <span>Notifications</span>
                 </DropdownMenuItem>
-              </DropdownMenuGroup>
+              </DropdownMenuGroup> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

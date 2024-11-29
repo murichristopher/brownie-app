@@ -40,6 +40,7 @@ import axiosInstance from '@/lib/axios'
 import { useAuth } from '@/lib/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { KanbanBoard } from './kanban-board'
+import { TaskDetailsModal } from './task-details-modal'
 
 type Task = {
   id: number
@@ -52,6 +53,11 @@ type Task = {
   created_at: string
   updated_at: string
   project_id: number
+  project: {
+    id: number
+    name: string
+    description: string
+  }
 }
 
 type User = {
@@ -136,6 +142,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [completedTaskId, setCompletedTaskId] = useState<number | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -246,6 +253,14 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
         }
       }
     )
+  }
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task)
+  }
+
+  const handleCloseTaskDetails = () => {
+    setSelectedTask(null)
   }
 
   const completedTasks = tasks?.filter(task => task.status === 'done').length || 0
@@ -376,15 +391,18 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
                     tasks?.map((task) => (
                       <motion.tr
                         key={task.id}
-                        className={`${task.status === 'done' ? 'opacity-70' : ''} transition-all duration-300`}
+                        className={`${task.status === 'done' ? 'opacity-70' : ''} transition-all duration-300 cursor-pointer hover:bg-accent`}
                         initial={{ opacity: 0 }}
                         animate={{
                           opacity: 1,
                           scale: completedTaskId === task.id ? [1, 1.05, 1] : 1,
-                          backgroundColor: completedTaskId === task.id ? ['#ffffff', '#f0fff4', '#ffffff'] : '#ffffff'
+                          backgroundColor: completedTaskId === task.id
+                            ? ['hsl(var(--background))', 'hsl(var(--success))', 'hsl(var(--background))']
+                            : 'hsl(var(--background))'
                         }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
+                        onClick={() => handleTaskClick(task)}
                       >
                         <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
@@ -410,7 +428,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
                           {users && (
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={users.find(u => u.id === task.user.id)?.profile_picture || ''} alt={`User ${task.user.id}`} />
-
+                              <AvatarFallback>{task.user.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                           )}
                         </TableCell>
@@ -439,19 +457,26 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => {
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation()
                                 setEditingTask(task)
                                 setIsEditDialogOpen(true)
                               }}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 <span>Edit</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleCompleteTask(task.id)}>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation()
+                                handleCompleteTask(task.id)
+                              }}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
                                 <span>Mark as Complete</span>
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => deleteMutation.mutate(task.id)}>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation()
+                                deleteMutation.mutate(task.id)
+                              }}>
                                 <Trash className="mr-2 h-4 w-4" />
                                 <span>Delete</span>
                               </DropdownMenuItem>
@@ -557,6 +582,11 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
           </form>
         </DialogContent>
       </Dialog>
+      <TaskDetailsModal
+        task={selectedTask}
+        isOpen={!!selectedTask}
+        onClose={handleCloseTaskDetails}
+      />
     </>
   )
 }
