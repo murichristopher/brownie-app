@@ -26,7 +26,8 @@ type Task = {
     id: number
     name: string
     description: string
-  }
+  },
+  description: string
 }
 
 type User = {

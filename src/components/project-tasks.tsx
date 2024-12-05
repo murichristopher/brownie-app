@@ -53,6 +53,7 @@ type Task = {
   created_at: string
   updated_at: string
   project_id: number
+  description: string
   project: {
     id: number
     name: string

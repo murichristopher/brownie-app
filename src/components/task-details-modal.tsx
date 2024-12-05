@@ -1,11 +1,19 @@
-import React from 'react'
+"use client"
+
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Coins, Clock, Calendar, Briefcase, AlertTriangle } from 'lucide-react'
+import { Coins, Clock, Calendar, AlertTriangle, Edit, Eye } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import axiosInstance from '@/lib/axios'
+import { useToast } from "@/components/ui/use-toast"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 type Task = {
   id: number
@@ -21,11 +29,7 @@ type Task = {
   priority: "high" | "medium" | "low"
   due_date: string
   created_at: string
-  project: {
-    id: number
-    name: string
-    description: string
-  }
+  description: string
 }
 
 type TaskDetailsModalProps = {
@@ -35,9 +39,70 @@ type TaskDetailsModalProps = {
 }
 
 export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProps) {
-  if (!task) return null
+  const [description, setDescription] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  console.log(task)
+  useEffect(() => {
+    if (task) {
+      setDescription(task.description || '')
+    }
+  }, [task])
+
+  const updateTaskMutation = useMutation({
+    mutationFn: (updatedTask: Partial<Task>) =>
+      axiosInstance.put(`/tasks/${task?.id}`, updatedTask),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task', task?.id] })
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update task description. Please try again.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const saveDescription = useCallback(() => {
+    if (task && description !== task.description) {
+      return updateTaskMutation.mutateAsync({ id: task.id, description })
+    }
+    return Promise.resolve()
+  }, [task, description, updateTaskMutation])
+
+  const handleDescriptionChange = useCallback((newDescription: string) => {
+    setDescription(newDescription)
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveDescription()
+    }, 2000) // Save after 2 seconds of inactivity
+  }, [saveDescription])
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleClose = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    saveDescription().then(() => {
+      onClose()
+    })
+  }, [saveDescription, onClose])
+
+  if (!task) return null
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -74,8 +139,8 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{task.title}</DialogTitle>
         </DialogHeader>
@@ -99,58 +164,92 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
             </div>
           </div>
 
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold">Task Description</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+                {isEditing ? 'Preview' : 'Edit'}
+              </Button>
+            </div>
+            {isEditing ? (
+              <Textarea
+                value={description}
+                onChange={(e) => handleDescriptionChange(e.target.value)}
+                placeholder="Write your task description here..."
+                className="h-[300px] resize-none"
+              />
+            ) : (
+              <div className="border rounded-md p-4 h-[300px] overflow-y-auto prose prose-sm max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ node, ...props }) => <p className="mb-4" {...props} />,
+                    h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-2" {...props} />,
+                    h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-2" {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4" {...props} />,
+                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                    a: ({ node, href, ...props }) => (
+                      <a
+                        href={href}
+                        className="text-blue-500 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {description}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-4 mb-4">
-                <Avatar className="h-12 w-12">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-10 w-10">
                   <AvatarImage src={task.user.profile_picture || ''} alt={task.user.name} />
                   <AvatarFallback>{task.user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{task.user.name}</h3>
-                  <p className="text-sm text-muted-foreground">{task.user.email}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className={`h-5 w-5 ${getPriorityColor(task.priority)}`} />
-                  <span className="capitalize">{task.priority} Priority</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-500" />
-                  <span>{formatDate(task.due_date)}</span>
+                  <h3 className="font-semibold text-sm">{task.user.name}</h3>
+                  <p className="text-xs text-muted-foreground">{task.user.email}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={`h-5 w-5 ${getPriorityColor(task.priority)}`} />
+              <span className="capitalize text-sm">{task.priority} Priority</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-blue-500" />
+              <span className="text-sm">{formatDate(task.due_date)}</span>
+            </div>
+          </div>
+
           <div>
-            <h3 className="font-semibold mb-2">Progress</h3>
+            <h3 className="font-semibold mb-2 text-sm">Progress</h3>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-500" />
-                <span>{getTaskDuration(task)}</span>
+                <span className="text-sm">{getTaskDuration(task)}</span>
               </div>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {getProgressPercentage(task)}% Complete
               </span>
             </div>
             <Progress value={getProgressPercentage(task)} className="h-2" />
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="font-semibold mb-2">Project Details</h3>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Briefcase className="h-5 w-5 text-indigo-500" />
-                  <span className="font-medium">{task.project.name}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{task.project.description}</p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </DialogContent>
