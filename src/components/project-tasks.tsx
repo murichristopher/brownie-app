@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import axiosInstance from '@/lib/axios'
+import axios from 'axios'
 import { useAuth } from '@/lib/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { KanbanBoard } from './kanban-board'
@@ -113,18 +114,22 @@ const createTask = async (projectId: number, newTask: Partial<Task>): Promise<Ta
     const response = await axiosInstance.post(`${API_URL}/${projectId}/tasks`, newTask)
     return response.data
   } catch (error) {
-    console.error('Error creating task:', error)
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.errors.join(', '))
+    }
     throw new Error('Failed to create task. Please try again.')
   }
 }
 
 const updateTask = async (projectId: number, updatedTask: Partial<Task>): Promise<Task> => {
   try {
-    const response = await axiosInstance.put(`${API_URL}/${projectId}/tasks/${updatedTask.id}`, updatedTask)
-    await axiosInstance.get('/users/me')
+    const { id, ...taskData } = updatedTask
+    const response = await axiosInstance.put(`${API_URL}/${projectId}/tasks/${id}`, taskData)
     return response.data
   } catch (error) {
-    console.error('Error updating task:', error)
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.errors.join(', '))
+    }
     throw new Error('Failed to update task. Please try again.')
   }
 }
@@ -133,7 +138,9 @@ const deleteTask = async (projectId: number, taskId: number): Promise<void> => {
   try {
     await axiosInstance.delete(`${API_URL}/${projectId}/tasks/${taskId}`)
   } catch (error) {
-    console.error('Error deleting task:', error)
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.errors.join(', '))
+    }
     throw new Error('Failed to delete task. Please try again.')
   }
 }
@@ -219,6 +226,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
       user_id: Number(formData.get('user_id')),
       priority: formData.get('priority') as Task['priority'],
       due_date: formData.get('due_date') as string,
+      description: formData.get('description') as string,
       project_id: projectId,
     }
     createMutation.mutate(newTask)
@@ -228,17 +236,25 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
     event.preventDefault()
     if (!editingTask) return
     const formData = new FormData(event.currentTarget)
-    const updatedTask = {
+    const updatedFields: Partial<Task> = {
       id: editingTask.id,
-      title: formData.get('title') as string,
-      status: formData.get('status') as Task['status'],
-      coins: Number(formData.get('coins')),
-      user_id: Number(formData.get('user_id')),
-      priority: formData.get('priority') as Task['priority'],
-      due_date: formData.get('due_date') as string,
-      project_id: projectId,
     }
-    updateMutation.mutate(updatedTask)
+
+    // Check each field and only include changed ones
+    if (formData.get('title') !== editingTask.title) updatedFields.title = formData.get('title') as string
+    if (formData.get('status') !== editingTask.status) updatedFields.status = formData.get('status') as Task['status']
+    if (Number(formData.get('coins')) !== editingTask.coins) updatedFields.coins = Number(formData.get('coins'))
+    if (Number(formData.get('user_id')) !== editingTask.user.id) updatedFields.user_id = Number(formData.get('user_id'))
+    if (formData.get('priority') !== editingTask.priority) updatedFields.priority = formData.get('priority') as Task['priority']
+    if (formData.get('due_date') !== editingTask.due_date) updatedFields.due_date = formData.get('due_date') as string
+    if (formData.get('description') !== editingTask.description) updatedFields.description = formData.get('description') as string
+
+    // Ensure we're always sending at least one field to update
+    if (Object.keys(updatedFields).length > 1) {
+      updateMutation.mutate(updatedFields)
+    } else {
+      toast({ title: "No changes detected", description: "Please make changes before updating.", variant: "warning" })
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -354,6 +370,10 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="due_date" className="text-right">Due Date</Label>
                   <Input id="due_date" name="due_date" type="date" className="col-span-3" required />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">Description</Label>
+                  <Input id="description" name="description" className="col-span-3" />
                 </div>
               </div>
               <DialogFooter>
@@ -585,6 +605,10 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-due_date" className="text-right">Due Date</Label>
                 <Input id="edit-due_date" name="due_date" type="date" defaultValue={editingTask?.due_date} className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-description" className="text-right">Description</Label>
+                <Input id="edit-description" name="description" defaultValue={editingTask?.description} className="col-span-3" />
               </div>
             </div>
             <DialogFooter>
