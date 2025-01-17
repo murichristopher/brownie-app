@@ -206,7 +206,7 @@ export function KanbanBoard({ tasks, projectId }: { tasks: Task[], projectId: nu
         </div>
       </DragDropContext>
       <TaskDetailsModal
-        task={selectedTask}
+        taskId={tasks?.find(t => t.id === selectedTask?.id)?.id ?? selectedTask?.id ?? null}
         isOpen={!!selectedTask}
         onClose={() => setSelectedTask(null)}
       />

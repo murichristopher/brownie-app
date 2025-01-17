@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import axiosInstance from '@/lib/axios'
 import { useToast } from "@/components/ui/use-toast"
 import ReactMarkdown from 'react-markdown'
@@ -33,17 +33,28 @@ type Task = {
 }
 
 type TaskDetailsModalProps = {
-  task: Task | null
+  taskId: number | null
   isOpen: boolean
   onClose: () => void
 }
 
-export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProps) {
+const fetchTask = async (taskId: number): Promise<Task> => {
+  const response = await axiosInstance.get(`/tasks/${taskId}`)
+  return response.data
+}
+
+export function TaskDetailsModal({ taskId, isOpen, onClose }: TaskDetailsModalProps) {
   const [description, setDescription] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const { data: task, isLoading, isError } = useQuery<Task, Error>({
+    queryKey: ['task', taskId],
+    queryFn: () => fetchTask(taskId!),
+    enabled: !!taskId,
+  })
 
   useEffect(() => {
     if (task) {
@@ -53,9 +64,9 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
 
   const updateTaskMutation = useMutation({
     mutationFn: (updatedTask: Partial<Task>) =>
-      axiosInstance.put(`/tasks/${task?.id}`, updatedTask),
+      axiosInstance.put(`/tasks/${taskId}`, updatedTask),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', task?.id] })
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] })
     },
     onError: (error) => {
       toast({
@@ -102,6 +113,8 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
     })
   }, [saveDescription, onClose])
 
+  if (isLoading) return <div>Loading...</div>
+  if (isError) return <div>Error loading task</div>
   if (!task) return null
 
   const formatDate = (dateString: string) => {
@@ -256,3 +269,4 @@ export function TaskDetailsModal({ task, isOpen, onClose }: TaskDetailsModalProp
     </Dialog>
   )
 }
+

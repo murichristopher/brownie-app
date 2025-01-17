@@ -194,16 +194,18 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
 
   const updateMutation = useMutation({
     mutationFn: (updatedTask: Partial<Task>) => updateTask(projectId, updatedTask),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] })
-      queryClient.invalidateQueries({ queryKey: ['userData'] })
-      toast({ title: "Task updated successfully" })
-      setIsEditDialogOpen(false)
+    onSuccess: (updatedTask) => {
+      queryClient.setQueryData<Task[]>(['projectTasks', projectId], (oldTasks) => {
+        return oldTasks?.map(task => task.id === updatedTask.id ? updatedTask : task) ?? [];
+      });
+      queryClient.invalidateQueries({ queryKey: ['userData'] });
+      toast({ title: "Task updated successfully" });
+      setIsEditDialogOpen(false);
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to update task", description: error.message, variant: "destructive" })
+      toast({ title: "Failed to update task", description: error.message, variant: "destructive" });
     }
-  })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (taskId: number) => deleteTask(projectId, taskId),
@@ -233,29 +235,22 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
   }
 
   const handleUpdateTask = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!editingTask) return
-    const formData = new FormData(event.currentTarget)
+    event.preventDefault();
+    if (!editingTask) return;
+    const formData = new FormData(event.currentTarget);
     const updatedFields: Partial<Task> = {
       id: editingTask.id,
-    }
+      title: formData.get('title') as string,
+      status: formData.get('status') as Task['status'],
+      coins: Number(formData.get('coins')),
+      user_id: Number(formData.get('user_id')) || null,
+      priority: formData.get('priority') as Task['priority'],
+      due_date: formData.get('due_date') as string,
+      description: formData.get('description') as string,
+    };
 
-    // Check each field and only include changed ones
-    if (formData.get('title') !== editingTask.title) updatedFields.title = formData.get('title') as string
-    if (formData.get('status') !== editingTask.status) updatedFields.status = formData.get('status') as Task['status']
-    if (Number(formData.get('coins')) !== editingTask.coins) updatedFields.coins = Number(formData.get('coins'))
-    if (Number(formData.get('user_id')) !== editingTask.user.id) updatedFields.user_id = Number(formData.get('user_id'))
-    if (formData.get('priority') !== editingTask.priority) updatedFields.priority = formData.get('priority') as Task['priority']
-    if (formData.get('due_date') !== editingTask.due_date) updatedFields.due_date = formData.get('due_date') as string
-    if (formData.get('description') !== editingTask.description) updatedFields.description = formData.get('description') as string
-
-    // Ensure we're always sending at least one field to update
-    if (Object.keys(updatedFields).length > 1) {
-      updateMutation.mutate(updatedFields)
-    } else {
-      toast({ title: "No changes detected", description: "Please make changes before updating.", variant: "warning" })
-    }
-  }
+    updateMutation.mutate(updatedFields);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -618,7 +613,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
         </DialogContent>
       </Dialog>
       <TaskDetailsModal
-        task={selectedTask}
+        taskId={tasks?.find(t => t.id === selectedTask?.id)?.id ?? selectedTask?.id ?? null}
         isOpen={!!selectedTask}
         onClose={handleCloseTaskDetails}
       />
