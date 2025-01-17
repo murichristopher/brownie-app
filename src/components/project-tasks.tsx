@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -147,6 +147,16 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const [viewPreference, setViewPreference] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('taskViewPreference') || 'table'
+    }
+    return 'table'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('taskViewPreference', viewPreference)
+  }, [viewPreference])
 
   const { data: tasks, isLoading, isError, error } = useQuery<Task[], Error>({
     queryKey: ['projectTasks', projectId],
@@ -353,7 +363,7 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
           </DialogContent>
         </Dialog>
       </div>
-      <Tabs defaultValue="table" className="w-full">
+      <Tabs value={viewPreference} onValueChange={setViewPreference} className="w-full">
         <TabsList>
           <TabsTrigger value="table">Table View</TabsTrigger>
           <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
@@ -591,3 +601,4 @@ export default function ProjectTasks({ projectId }: { projectId: number }) {
     </>
   )
 }
+
